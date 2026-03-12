@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { Product, ProductFormData } from '../lib/supabase';
+import { Product, ProductFormData } from '../lib/type';
 
 interface ProductFormProps {
   product?: Product | null;

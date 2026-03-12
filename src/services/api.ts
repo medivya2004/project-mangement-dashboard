@@ -1,18 +1,16 @@
-import { Product, ProductFormData } from "../lib/type";
+import { Product } from "../lib/type";
 
 const STORAGE_KEY = "products";
 
-let products: Product[] = [];
-
-// Load from localStorage
-const loadProducts = (): Product[] => {
+// Get products from localStorage
+export const getStoredProducts = (): Product[] => {
   const stored = localStorage.getItem(STORAGE_KEY);
   return stored ? JSON.parse(stored) : [];
 };
 
-// Save to localStorage
-const saveProducts = (data: Product[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+// Save products to localStorage
+export const saveStoredProducts = (products: Product[]) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
 };
 
 // Fetch initial products from FakeStore API
@@ -20,7 +18,7 @@ export const fetchProductsFromFakeStore = async (): Promise<Product[]> => {
   const response = await fetch("https://fakestoreapi.com/products");
 
   if (!response.ok) {
-    throw new Error("Failed to fetch products from FakeStore API");
+    throw new Error("Failed to fetch products");
   }
 
   const data = await response.json();
@@ -38,75 +36,16 @@ export const fetchProductsFromFakeStore = async (): Promise<Product[]> => {
   }));
 };
 
-// Initialize products
-export const initializeProducts = async (): Promise<void> => {
-  const storedProducts = loadProducts();
+// Initialize products (runs only once)
+export const initializeProducts = async (): Promise<Product[]> => {
+  const storedProducts = getStoredProducts();
 
   if (storedProducts.length > 0) {
-    products = storedProducts;
-    return;
+    return storedProducts;
   }
 
   const apiProducts = await fetchProductsFromFakeStore();
-  products = apiProducts;
-  saveProducts(products);
-};
+  saveStoredProducts(apiProducts);
 
-// Get all products
-export const getAllProducts = async (): Promise<Product[]> => {
-  products = loadProducts();
-  return products.sort((a, b) => a.id - b.id);
-};
-
-// Create product
-export const createProduct = async (
-  productData: ProductFormData
-): Promise<Product> => {
-  products = loadProducts();
-
-  const newProduct: Product = {
-    id: Date.now(),
-    ...productData,
-    rating_rate: 0,
-    rating_count: 0,
-    image:
-      "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg",
-  };
-
-  products.push(newProduct);
-  saveProducts(products);
-
-  return newProduct;
-};
-
-// Update product
-export const updateProduct = async (
-  id: number,
-  productData: ProductFormData
-): Promise<Product> => {
-  products = loadProducts();
-
-  const index = products.findIndex((p) => p.id === id);
-
-  if (index === -1) {
-    throw new Error("Product not found");
-  }
-
-  products[index] = {
-    ...products[index],
-    ...productData,
-  };
-
-  saveProducts(products);
-
-  return products[index];
-};
-
-// Delete product
-export const deleteProduct = async (id: number): Promise<void> => {
-  products = loadProducts();
-
-  products = products.filter((product) => product.id !== id);
-
-  saveProducts(products);
+  return apiProducts;
 };

@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationProps {
   currentPage: number;
@@ -6,81 +7,112 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
-export const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) => {
-  if (totalPages <= 1) return null;
+const DOTS = "...";
 
-  const getPageNumbers = () => {
+export const Pagination: React.FC<PaginationProps> = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+}) => {
+  const paginationRange = useMemo(() => {
+    const siblingCount = 1;
+    const totalPageNumbers = siblingCount * 2 + 5;
+
+    if (totalPages <= totalPageNumbers) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const leftSiblingIndex = Math.max(currentPage - siblingCount, 1);
+    const rightSiblingIndex = Math.min(currentPage + siblingCount, totalPages);
+
+    const showLeftDots = leftSiblingIndex > 2;
+    const showRightDots = rightSiblingIndex < totalPages - 2;
+
     const pages: (number | string)[] = [];
-    const maxVisible = 5;
 
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i);
-        }
-        pages.push('...');
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push('...');
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i);
-        }
-      } else {
-        pages.push(1);
-        pages.push('...');
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
-        pages.push('...');
-        pages.push(totalPages);
-      }
+    if (!showLeftDots && showRightDots) {
+      const leftRange = Array.from({ length: 3 }, (_, i) => i + 1);
+      pages.push(...leftRange, DOTS, totalPages);
+    }
+
+    else if (showLeftDots && !showRightDots) {
+      const rightRange = Array.from(
+        { length: 3 },
+        (_, i) => totalPages - 2 + i
+      );
+      pages.push(1, DOTS, ...rightRange);
+    }
+
+    else if (showLeftDots && showRightDots) {
+      pages.push(
+        1,
+        DOTS,
+        ...Array.from(
+          { length: rightSiblingIndex - leftSiblingIndex + 1 },
+          (_, i) => leftSiblingIndex + i
+        ),
+        DOTS,
+        totalPages
+      );
     }
 
     return pages;
+  }, [currentPage, totalPages]);
+
+  if (totalPages <= 1) return null;
+
+  const handleChange = (page: number) => {
+    if (page === currentPage) return;
+    if (page < 1 || page > totalPages) return;
+    onPageChange(page);
   };
 
   return (
     <div className="flex items-center justify-center gap-2 mt-8">
+
+      {/* Previous */}
       <button
-        onClick={() => onPageChange(currentPage - 1)}
+        onClick={() => handleChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+        className="p-2 border rounded-lg disabled:opacity-50"
       >
-        <ChevronLeft className="w-5 h-5" />
+        <ChevronLeft size={20} />
       </button>
 
-      {getPageNumbers().map((page, index) => (
-        typeof page === 'number' ? (
+      {/* Page Numbers */}
+      {paginationRange.map((page, index) => {
+        if (page === DOTS) {
+          return (
+            <span key={index} className="px-2 text-gray-400">
+              ...
+            </span>
+          );
+        }
+
+        return (
           <button
-            key={index}
-            onClick={() => onPageChange(page)}
-            className={`min-w-[40px] h-[40px] rounded-lg font-medium transition-colors ${
+            key={page}
+            onClick={() => handleChange(page as number)}
+            className={`min-w-[40px] h-[40px] rounded-lg font-medium ${
               currentPage === page
-                ? 'bg-blue-600 text-white'
-                : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                ? "bg-blue-600 text-white"
+                : "border hover:bg-gray-50"
             }`}
           >
             {page}
           </button>
-        ) : (
-          <span key={index} className="px-2 text-gray-400">
-            {page}
-          </span>
-        )
-      ))}
+        );
+      })}
 
+      {/* Next */}
       <button
-        onClick={() => onPageChange(currentPage + 1)}
+        onClick={() => handleChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+        className="p-2 border rounded-lg disabled:opacity-50"
       >
-        <ChevronRight className="w-5 h-5" />
+        <ChevronRight size={20} />
       </button>
+
     </div>
   );
 };
