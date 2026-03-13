@@ -1,28 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-
-export interface Product {
-  id: number;
-  name: string;
-  price: number;
-  description?: string;
-}
-
-export type ProductFormData = {
-  name: string;
-  price: number;
-  description?: string;
-};
-
-const STORAGE_KEY = "products";
-
-const getStoredProducts = (): Product[] => {
-  const data = localStorage.getItem(STORAGE_KEY);
-  return data ? JSON.parse(data) : [];
-};
-
-const saveProducts = (products: Product[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-};
+import { useState, useEffect, useCallback } from "react";
+import { Product, ProductFormData } from "../lib/type";
+import {
+  initializeProducts,
+  getStoredProducts,
+  saveStoredProducts
+} from "../services/api";
 
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -34,9 +16,9 @@ export const useProducts = () => {
       setLoading(true);
       setError(null);
 
-      const data = getStoredProducts();
-      console.log(data)
+      const data = await initializeProducts();
       setProducts(data);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load products");
       console.error("Error loading products:", err);
@@ -49,6 +31,7 @@ export const useProducts = () => {
     loadProducts();
   }, [loadProducts]);
 
+  // CREATE
   const addProduct = async (productData: ProductFormData): Promise<void> => {
     try {
       setError(null);
@@ -62,14 +45,16 @@ export const useProducts = () => {
 
       const updated = [...existing, newProduct];
 
-      saveProducts(updated);
+      saveStoredProducts(updated);
       setProducts(updated);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add product");
       throw err;
     }
   };
 
+  // UPDATE
   const editProduct = async (
     id: number,
     productData: ProductFormData
@@ -83,14 +68,16 @@ export const useProducts = () => {
         p.id === id ? { ...p, ...productData } : p
       );
 
-      saveProducts(updated);
+      saveStoredProducts(updated);
       setProducts(updated);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update product");
       throw err;
     }
   };
 
+  // DELETE
   const removeProduct = async (id: number): Promise<void> => {
     try {
       setError(null);
@@ -99,8 +86,13 @@ export const useProducts = () => {
 
       const updated = existing.filter((p) => p.id !== id);
 
-      saveProducts(updated);
+      saveStoredProducts(updated);
       setProducts(updated);
+
+      if (updated.length === 0) {
+        await loadProducts();
+      }
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete product");
       throw err;
