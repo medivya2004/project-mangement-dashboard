@@ -2,18 +2,15 @@ import { Product } from "../lib/type";
 
 const STORAGE_KEY = "products";
 
-// Get products from localStorage
 export const getStoredProducts = (): Product[] => {
   const stored = localStorage.getItem(STORAGE_KEY);
   return stored ? JSON.parse(stored) : [];
 };
 
-// Save products to localStorage
 export const saveStoredProducts = (products: Product[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
 };
 
-// Fetch initial products from FakeStore API
 export const fetchProductsFromFakeStore = async (): Promise<Product[]> => {
   const response = await fetch("https://fakestoreapi.com/products");
 
@@ -36,7 +33,6 @@ export const fetchProductsFromFakeStore = async (): Promise<Product[]> => {
   }));
 };
 
-// Initialize products (runs only once)
 export const initializeProducts = async (): Promise<Product[]> => {
   const storedProducts = getStoredProducts();
 
